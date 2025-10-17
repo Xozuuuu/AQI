@@ -1,6 +1,6 @@
-from decouple import config
+import os
 
-API_KEY = config('API_KEY')
+API_KEY = os.getenv('API_KEY', '081060c06310131e81330c727e76f1998b837d57')
 PROVINCES_LIST = [
     'hanoi', 
     'ho-chi-minh-city', 
