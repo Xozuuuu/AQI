@@ -1,4 +1,6 @@
-API_KEY = '64e4752250846f70bbe89e0660f45c09d90b3cb7'  # Đăng ký tại aqicn.org/api
+from decouple import config
+
+API_KEY = config('API_KEY')
 PROVINCES_LIST = [
     'hanoi', 
     'ho-chi-minh-city', 
