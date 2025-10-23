@@ -14,10 +14,11 @@ import sys
 # Thêm đường dẫn để import các module nội bộ
 sys.path.append(os.path.dirname(__file__))
 
-from backend.fetch_aqi import fetch_aqi
+from backend.fetch_aqi import fetch_aqi, fetch_and_save_aqi, get_aqi_comparison, get_aqi_trends
 from backend.data_processing import process_data
 from backend.prediction import AQIPredictor, WeatherBasedPredictor, create_prediction_dashboard
 from backend.reporting import AQIReportGenerator, create_report_dashboard
+from backend.database import AQIDatabase
 import config
 
 # Cấu hình trang
@@ -189,27 +190,40 @@ def main():
     # Menu điều hướng
     page = st.sidebar.selectbox(
         "Chọn trang",
-        ["📊 Dashboard", "🔮 Dự báo", "📈 Báo cáo", "⚙️ Cài đặt"]
+        ["📊 Dashboard", "📊 So sánh dữ liệu", "🔮 Dự báo", "📈 Báo cáo", "⚙️ Cài đặt"]
     )
     
     # Nút cập nhật dữ liệu
     if st.sidebar.button("🔄 Cập nhật dữ liệu", type="primary"):
         with st.spinner("Đang cập nhật dữ liệu..."):
-            df = fetch_aqi()
-            os.makedirs('data/raw', exist_ok=True)
-            df.to_csv('data/raw/latest_aqi.csv', index=False, encoding='utf-8-sig')
-            
-            # Lưu vào database lịch sử
             try:
-                process_data()
+                # Lấy dữ liệu mới và lưu vào database
+                df, comparison = fetch_and_save_aqi()
+                
+                # Lưu vào file CSV
+                os.makedirs('data/raw', exist_ok=True)
+                df.to_csv('data/raw/latest_aqi.csv', index=False, encoding='utf-8-sig')
+                
                 st.success("Cập nhật thành công!")
+                
+                # Hiển thị thông tin so sánh
+                st.info(f"""
+                📊 **Thống kê cập nhật:**
+                - Tổng số tỉnh: {comparison['summary']['total_provinces']}
+                - Dữ liệu mới: {comparison['summary']['new_records_count']}
+                - Dữ liệu cập nhật: {comparison['summary']['updated_records_count']}
+                - Không thay đổi: {comparison['summary']['no_change_records_count']}
+                """)
+                
             except Exception as e:
-                st.warning(f"Cập nhật dữ liệu thành công nhưng có lỗi khi lưu lịch sử: {e}")
+                st.error(f"Lỗi khi cập nhật dữ liệu: {e}")
             st.rerun()
     
     # Điều hướng trang
     if page == "📊 Dashboard":
         show_dashboard()
+    elif page == "📊 So sánh dữ liệu":
+        show_comparison_page()
     elif page == "🔮 Dự báo":
         show_prediction_page()
     elif page == "📈 Báo cáo":
@@ -488,6 +502,150 @@ def show_reporting_page():
                         filename = generator.export_to_json(report)
                         st.success(f"Đã xuất báo cáo ra file: {filename}")
 
+def show_comparison_page():
+    """Trang so sánh dữ liệu"""
+    st.header("📊 So sánh Dữ liệu AQI")
+    
+    # Khởi tạo database
+    db = AQIDatabase()
+    
+    # Lấy dữ liệu so sánh
+    try:
+        comparison = get_aqi_comparison()
+        
+        if not comparison or 'summary' not in comparison:
+            st.warning("Chưa có dữ liệu để so sánh. Vui lòng cập nhật dữ liệu trước.")
+            return
+        
+        # Hiển thị thống kê tổng quan
+        st.subheader("📈 Thống kê So sánh")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Tổng số tỉnh", comparison['summary']['total_provinces'])
+        
+        with col2:
+            st.metric("Dữ liệu mới", comparison['summary']['new_records_count'])
+        
+        with col3:
+            st.metric("Dữ liệu cập nhật", comparison['summary']['updated_records_count'])
+        
+        with col4:
+            st.metric("Không thay đổi", comparison['summary']['no_change_records_count'])
+        
+        # Hiển thị dữ liệu cập nhật
+        if comparison['updated_records']:
+            st.subheader("🔄 Dữ liệu Cập nhật")
+            
+            updated_df = pd.DataFrame(comparison['updated_records'])
+            updated_df['Thay đổi'] = updated_df['change'].apply(lambda x: f"{x:+.1f}" if pd.notna(x) else "N/A")
+            updated_df['% Thay đổi'] = updated_df['change_percentage'].apply(lambda x: f"{x:+.1f}%" if pd.notna(x) else "N/A")
+            
+            st.dataframe(
+                updated_df[['province', 'old_aqi', 'new_aqi', 'Thay đổi', '% Thay đổi']],
+                use_container_width=True,
+                hide_index=True
+            )
+            
+            # Biểu đồ thay đổi
+            fig = px.bar(
+                updated_df,
+                x='province',
+                y='change',
+                title='Thay đổi AQI theo tỉnh',
+                color='change',
+                color_continuous_scale='RdYlGn'
+            )
+            fig.update_xaxis(tickangle=45)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Hiển thị dữ liệu mới
+        if comparison['new_records']:
+            st.subheader("🆕 Dữ liệu Mới")
+            
+            new_df = pd.DataFrame(comparison['new_records'])
+            st.dataframe(
+                new_df[['province', 'new_aqi']],
+                use_container_width=True,
+                hide_index=True
+            )
+        
+        # Hiển thị dữ liệu không thay đổi
+        if comparison['no_change_records']:
+            st.subheader("➡️ Dữ liệu Không Thay đổi")
+            
+            no_change_df = pd.DataFrame(comparison['no_change_records'])
+            st.dataframe(
+                no_change_df[['province', 'old_aqi', 'new_aqi']],
+                use_container_width=True,
+                hide_index=True
+            )
+        
+        # Phân tích xu hướng
+        st.subheader("📈 Phân tích Xu hướng")
+        
+        # Lấy xu hướng cho tất cả tỉnh
+        trends = get_aqi_trends(days=7)
+        
+        if trends:
+            trend_data = []
+            for province, trend_info in trends.items():
+                if trend_info['trend'] != 'no_data':
+                    trend_data.append({
+                        'Tỉnh': province,
+                        'Xu hướng': trend_info['trend'],
+                        'Hướng': trend_info['direction'],
+                        'Tỷ lệ thay đổi (%)': trend_info['change_rate'],
+                        'Điểm dữ liệu': trend_info['data_points']
+                    })
+            
+            if trend_data:
+                trend_df = pd.DataFrame(trend_data)
+                st.dataframe(trend_df, use_container_width=True, hide_index=True)
+                
+                # Biểu đồ xu hướng
+                fig = px.bar(
+                    trend_df,
+                    x='Tỉnh',
+                    y='Tỷ lệ thay đổi (%)',
+                    title='Tỷ lệ thay đổi AQI 7 ngày qua',
+                    color='Tỷ lệ thay đổi (%)',
+                    color_continuous_scale='RdYlGn'
+                )
+                fig.update_xaxis(tickangle=45)
+                st.plotly_chart(fig, use_container_width=True)
+        
+        # Xếp hạng tỉnh
+        st.subheader("🏆 Xếp hạng Tỉnh")
+        
+        ranking = db.get_province_ranking()
+        if not ranking.empty:
+            ranking['Xếp hạng'] = range(1, len(ranking) + 1)
+            ranking['Tỉnh'] = ranking['province']
+            ranking['AQI'] = ranking['aqi']
+            
+            st.dataframe(
+                ranking[['Xếp hạng', 'Tỉnh', 'AQI']],
+                use_container_width=True,
+                hide_index=True
+            )
+            
+            # Biểu đồ xếp hạng
+            fig = px.bar(
+                ranking.head(10),  # Top 10
+                x='AQI',
+                y='Tỉnh',
+                orientation='h',
+                title='Top 10 Tỉnh có AQI tốt nhất',
+                color='AQI',
+                color_continuous_scale='RdYlGn_r'
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
+    except Exception as e:
+        st.error(f"Lỗi khi tải dữ liệu so sánh: {e}")
+
 def show_settings_page():
     """Trang cài đặt"""
     st.header("⚙️ Cài đặt Hệ thống")
@@ -506,36 +664,38 @@ def show_settings_page():
     
     with col1:
         if st.button("🗑️ Xóa dữ liệu lịch sử"):
-            if os.path.exists('data/processed/aqi_history.db'):
-                os.remove('data/processed/aqi_history.db')
+            try:
+                db = AQIDatabase()
+                db.cleanup_old_data(0)  # Xóa tất cả dữ liệu cũ
                 st.success("Đã xóa dữ liệu lịch sử!")
-            else:
-                st.info("Không có dữ liệu lịch sử để xóa.")
+            except Exception as e:
+                st.error(f"Lỗi khi xóa dữ liệu: {e}")
     
     with col2:
         if st.button("📊 Tạo dữ liệu mẫu"):
-            # Tạo dữ liệu mẫu
-            sample_data = []
-            provinces = list(config.PROVINCE_MAPPING.values())
-            
-            for i in range(30):  # 30 ngày dữ liệu mẫu
-                date = datetime.now() - timedelta(days=i)
-                for province in provinces:
-                    sample_data.append({
-                        'Province': province,
-                        'AQI': np.random.randint(20, 200),
-                        'Date': date
-                    })
-            
-            df_sample = pd.DataFrame(sample_data)
-            
-            # Lưu vào database
-            os.makedirs('data/processed', exist_ok=True)
-            conn = sqlite3.connect('data/processed/aqi_history.db')
-            df_sample.to_sql('daily_aqi', conn, if_exists='replace', index=False)
-            conn.close()
-            
-            st.success("Đã tạo dữ liệu mẫu!")
+            try:
+                # Tạo dữ liệu mẫu
+                sample_data = []
+                provinces = list(config.PROVINCE_MAPPING.values())
+                
+                for i in range(30):  # 30 ngày dữ liệu mẫu
+                    date = datetime.now() - timedelta(days=i)
+                    for province in provinces:
+                        sample_data.append({
+                            'Province': province,
+                            'AQI': np.random.randint(20, 200),
+                            'Date': date
+                        })
+                
+                df_sample = pd.DataFrame(sample_data)
+                
+                # Lưu vào database
+                db = AQIDatabase()
+                db.save_daily_aqi(df_sample)
+                
+                st.success("Đã tạo dữ liệu mẫu!")
+            except Exception as e:
+                st.error(f"Lỗi khi tạo dữ liệu mẫu: {e}")
     
     # Thông tin hệ thống
     st.subheader("ℹ️ Thông tin Hệ thống")
@@ -549,6 +709,21 @@ def show_settings_page():
     with info_col2:
         st.metric("Phiên bản Python", f"{sys.version.split()[0]}")
         st.metric("Trạng thái", "🟢 Hoạt động")
+    
+    # Thông tin database
+    st.subheader("🗄️ Thông tin Database")
+    
+    try:
+        db = AQIDatabase()
+        latest_data = db.get_latest_aqi()
+        
+        if not latest_data.empty:
+            st.metric("Số bản ghi mới nhất", len(latest_data))
+            st.metric("Tỉnh có dữ liệu", latest_data['province'].nunique())
+        else:
+            st.info("Chưa có dữ liệu trong database")
+    except Exception as e:
+        st.warning(f"Không thể kết nối database: {e}")
 
 if __name__ == "__main__":
     main()

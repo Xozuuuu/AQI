@@ -1,130 +1,105 @@
-#!/usr/bin/env python3
 """
-Setup script cho he thong AQI Monitoring
+Setup script for AQI Monitoring System.
+
+This script handles the installation and distribution of the AQI Monitoring System.
 """
 
-import os
-import sys
-import subprocess
-import platform
+from setuptools import setup, find_packages
+from pathlib import Path
 
-def check_python():
-    """Kiem tra Python version"""
-    print("Kiem tra Python...")
-    if sys.version_info < (3, 8):
-        print("ERROR: Can Python 3.8 tro len")
-        return False
-    print(f"SUCCESS: Python {sys.version.split()[0]}")
-    return True
+# Read the README file
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
-def install_dependencies():
-    """Cai dat dependencies"""
-    print("\nCai dat dependencies...")
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "docs/requirements.txt"], 
-                      check=True)
-        print("SUCCESS: Cai dat dependencies thanh cong")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"ERROR: Cai dat dependencies that bai: {e}")
-        return False
+# Read requirements
+requirements = []
+with open("requirements.txt", "r", encoding="utf-8") as f:
+    requirements = [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
-def create_directories():
-    """Tao thu muc can thiet"""
-    print("\nTao thu muc...")
-    directories = [
-        'data',
-        'data/raw',
-        'data/processed',
-        'logs',
-        '.streamlit'
-    ]
-    
-    for directory in directories:
-        os.makedirs(directory, exist_ok=True)
-        print(f"SUCCESS: {directory}/")
-    
-    return True
-
-def create_config_files():
-    """Tao file cau hinh"""
-    print("\nTao file cau hinh...")
-    
-    # Tao .env tu env.example
-    if not os.path.exists('.env') and os.path.exists('env.example'):
-        import shutil
-        shutil.copy('env.example', '.env')
-        print("SUCCESS: Tao file .env")
-    
-    # Tao secrets.toml
-    secrets_file = '.streamlit/secrets.toml'
-    if not os.path.exists(secrets_file):
-        with open(secrets_file, 'w', encoding='utf-8') as f:
-            f.write('''# Streamlit secrets configuration
-[api]
-api_key = "your_aqi_api_key_here"
-
-[database]
-host = "localhost"
-port = 5432
-name = "aqi_monitoring"
-user = "aqi_user"
-password = "aqi_password"
-''')
-        print("SUCCESS: Tao file secrets.toml")
-    
-    return True
-
-def run_tests():
-    """Chay tests"""
-    print("\nChay tests...")
-    try:
-        result = subprocess.run([sys.executable, "quick_test.py"], 
-                              capture_output=True, text=True)
-        if result.returncode == 0:
-            print("SUCCESS: Tests thanh cong")
-            return True
-        else:
-            print("WARNING: Tests co loi")
-            print(result.stderr)
-            return False
-    except Exception as e:
-        print(f"ERROR: {e}")
-        return False
-
-def main():
-    """Ham chinh"""
-    print("=== SETUP HE THONG AQI MONITORING ===")
-    
-    steps = [
-        ("Kiem tra Python", check_python),
-        ("Cai dat dependencies", install_dependencies),
-        ("Tao thu muc", create_directories),
-        ("Tao file cau hinh", create_config_files),
-        ("Chay tests", run_tests)
-    ]
-    
-    passed = 0
-    total = len(steps)
-    
-    for step_name, step_func in steps:
-        print(f"\n{step_name}:")
-        if step_func():
-            passed += 1
-    
-    print("\n" + "=" * 50)
-    print(f"KET QUA SETUP: {passed}/{total} thanh cong")
-    
-    if passed == total:
-        print("SUCCESS: Setup hoan tat!")
-        print("\n=== HUONG DAN SU DUNG ===")
-        print("1. Chay ung dung: streamlit run app.py")
-        print("2. Hoac: python start.py")
-        print("3. Hoac: python run_demo.py")
-        print("4. Mo trinh duyet: http://localhost:8501")
-    else:
-        print("WARNING: Setup co loi!")
-        print("Vui long kiem tra va khac phuc")
-
-if __name__ == "__main__":
-    main()
+setup(
+    name="aqi-monitoring",
+    version="1.0.0",
+    author="AQI Monitoring Team",
+    author_email="support@aqimonitoring.com",
+    description="A comprehensive air quality monitoring system with real-time data collection, analysis, prediction, and reporting capabilities",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/aqimonitoring/aqi-monitoring",
+    project_urls={
+        "Bug Reports": "https://github.com/aqimonitoring/aqi-monitoring/issues",
+        "Source": "https://github.com/aqimonitoring/aqi-monitoring",
+        "Documentation": "https://aqimonitoring.readthedocs.io/",
+    },
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: End Users/Desktop",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Scientific/Engineering :: Atmospheric Science",
+        "Topic :: Scientific/Engineering :: Information Analysis",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    ],
+    python_requires=">=3.8",
+    install_requires=requirements,
+    extras_require={
+        "dev": [
+            "pytest>=7.4.0",
+            "pytest-asyncio>=0.21.0",
+            "pytest-cov>=4.1.0",
+            "black>=23.0.0",
+            "isort>=5.12.0",
+            "flake8>=6.0.0",
+            "mypy>=1.5.0",
+            "pre-commit>=3.4.0",
+        ],
+        "docs": [
+            "mkdocs>=1.5.0",
+            "mkdocs-material>=9.4.0",
+            "mkdocstrings>=0.23.0",
+        ],
+        "monitoring": [
+            "prometheus-client>=0.17.0",
+            "grafana-api>=1.0.3",
+        ],
+    },
+    entry_points={
+        "console_scripts": [
+            "aqi-monitor=aqi_monitoring.cli:main",
+            "aqi-fetch=aqi_monitoring.cli:fetch_data",
+            "aqi-report=aqi_monitoring.cli:generate_report",
+        ],
+    },
+    include_package_data=True,
+    package_data={
+        "aqi_monitoring": [
+            "templates/*.html",
+            "static/*.css",
+            "static/*.js",
+            "data/*.json",
+            "config/*.yaml",
+        ],
+    },
+    zip_safe=False,
+    keywords=[
+        "air-quality",
+        "aqi",
+        "monitoring",
+        "environmental",
+        "data-analysis",
+        "streamlit",
+        "machine-learning",
+        "prediction",
+        "visualization",
+    ],
+)
