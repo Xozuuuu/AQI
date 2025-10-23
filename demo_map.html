@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_75b05043fb679fafc3c6b83c80d2a0bf {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_75b05043fb679fafc3c6b83c80d2a0bf" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_75b05043fb679fafc3c6b83c80d2a0bf = L.map(
+                "map_75b05043fb679fafc3c6b83c80d2a0bf",
+                {
+                    center: [16.0, 108.0],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 6,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_8b2caa3ec71286d00f3793749b04fa0b = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_8b2caa3ec71286d00f3793749b04fa0b.addTo(map_75b05043fb679fafc3c6b83c80d2a0bf);
+        
+    
+            var circle_marker_f0424447c8943097fb828641ae4a0fd5 = L.circleMarker(
+                [21.0285, 105.8542],
+                {"bubblingMouseEvents": true, "color": "yellow", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "yellow", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 10, "stroke": true, "weight": 3}
+            ).addTo(map_75b05043fb679fafc3c6b83c80d2a0bf);
+        
+    
+        var popup_97d4eabe9921a39c8c38859f3d8f5b0f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_a2c171eb9f24e770e43b50cfe6a0b7d7 = $(`<div id="html_a2c171eb9f24e770e43b50cfe6a0b7d7" style="width: 100.0%; height: 100.0%;">Ha Noi: AQI 85</div>`)[0];
+                popup_97d4eabe9921a39c8c38859f3d8f5b0f.setContent(html_a2c171eb9f24e770e43b50cfe6a0b7d7);
+            
+        
+
+        circle_marker_f0424447c8943097fb828641ae4a0fd5.bindPopup(popup_97d4eabe9921a39c8c38859f3d8f5b0f)
+        ;
+
+        
+    
+    
+            var circle_marker_96e884223cf63708fb2863c9a71ba1a5 = L.circleMarker(
+                [10.8231, 106.6297],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 10, "stroke": true, "weight": 3}
+            ).addTo(map_75b05043fb679fafc3c6b83c80d2a0bf);
+        
+    
+        var popup_585fbf09a07e9621d7d8ba4d365a1c08 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_950d9e5538da3d3f0af80e0a22565d0f = $(`<div id="html_950d9e5538da3d3f0af80e0a22565d0f" style="width: 100.0%; height: 100.0%;">Ho Chi Minh City: AQI 120</div>`)[0];
+                popup_585fbf09a07e9621d7d8ba4d365a1c08.setContent(html_950d9e5538da3d3f0af80e0a22565d0f);
+            
+        
+
+        circle_marker_96e884223cf63708fb2863c9a71ba1a5.bindPopup(popup_585fbf09a07e9621d7d8ba4d365a1c08)
+        ;
+
+        
+    
+    
+            var circle_marker_7f173d0da45552acf4492e9e7f3ff18a = L.circleMarker(
+                [16.0544, 108.2022],
+                {"bubblingMouseEvents": true, "color": "yellow", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "yellow", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 10, "stroke": true, "weight": 3}
+            ).addTo(map_75b05043fb679fafc3c6b83c80d2a0bf);
+        
+    
+        var popup_2da35919ba2db4d4a850f0c7a41da8aa = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ff83497195378d4102e14373c02f35cc = $(`<div id="html_ff83497195378d4102e14373c02f35cc" style="width: 100.0%; height: 100.0%;">Da Nang: AQI 95</div>`)[0];
+                popup_2da35919ba2db4d4a850f0c7a41da8aa.setContent(html_ff83497195378d4102e14373c02f35cc);
+            
+        
+
+        circle_marker_7f173d0da45552acf4492e9e7f3ff18a.bindPopup(popup_2da35919ba2db4d4a850f0c7a41da8aa)
+        ;
+
+        
+    
+</script>
+</html>
