@@ -1,3 +1,4 @@
+# backend/scheduler.py
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
 from backend.data_processing import process_data
@@ -14,26 +15,24 @@ logging.basicConfig(
 )
 
 def update_job():
-    logging.info("BẮT ĐẦU chạy update_job()")  # Log bắt đầu
+    logging.info("BẮT ĐẦU update_job() lúc 8:00 AM")
     try:
         process_data()
-        logging.info(f"AQI updated successfully at {datetime.now()}")
+        logging.info(f"AQI cập nhật thành công lúc {datetime.now()}")
     except Exception as e:
-        logging.error(f"LỖI trong update_job: {e}", exc_info=True)
+        logging.error(f"LỖI: {e}", exc_info=True)
 
 # Khởi tạo scheduler
 scheduler = BackgroundScheduler()
-scheduler.add_job(update_job, 'cron', hour=8, minute=0)  # Chạy lúc 8h sáng
+scheduler.add_job(update_job, 'cron', hour=8, minute=0)
 scheduler.start()
 
-# GIỮ PROCESS SỐNG MÃI
-if __name__ == '__main__':
-    logging.info("Scheduler đã khởi động! Chạy job lúc 8h sáng.")
-    print("Scheduler đang chạy... Nhấn Ctrl+C để dừng.")
-    try:
-        while True:
-            time.sleep(1)
-    except (KeyboardInterrupt, SystemExit):
-        logging.info("Scheduler đang dừng...")
-        scheduler.shutdown()
-        print("Scheduler đã dừng.")
+logging.info("Scheduler khởi động! Sẽ cập nhật lúc 8:00 AM hàng ngày.")
+
+# Giữ process sống MÀ KHÔNG CHẶN .bat
+try:
+    while True:
+        time.sleep(60)
+except (KeyboardInterrupt, SystemExit):
+    scheduler.shutdown()
+    logging.info("Scheduler đã dừng.")
