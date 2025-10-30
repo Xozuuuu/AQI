@@ -56,7 +56,7 @@ def get_color(aqi):
     if pd.isna(aqi): return '#ffffff'
     aqi = float(aqi)
     if aqi <= 50:  return '#00e400'
-    if aqi <= 100: return '#ffff00'
+    if aqi <= 100: return "#cccc16"
     if aqi <= 150: return '#ff7e00'
     if aqi <= 200: return '#ff0000'
     if aqi <= 300: return '#99004c'
@@ -162,14 +162,31 @@ def create_map():
     <div style="position: fixed; bottom: 20px; left: 20px; z-index: 1000; 
                 background: white; padding: 12px; border: 1px solid #333; border-radius: 8px; 
                 font-family: Arial; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-        <p style="margin:0 0 8px; font-weight:bold; font-size:14px;">Chỉ số AQI</p>
-        <p style="margin:3px 0;"><i style="background:#00e400; width:18px; height:18px; display:inline-block; border-radius:3px;"></i> 0-50: Tốt</p>
-        <p style="margin:3px 0;"><i style="background:#ffff00; width:18px; height:18px; display:inline-block; border-radius:3px;"></i> 51-100: Trung bình</p>
-        <p style="margin:3px 0;"><i style="background:#ff7e00; width:18px; height:18px; display:inline-block; border-radius:3px;"></i> 101-150: Kém</p>
-        <p style="margin:3px 0;"><i style="background:#ff0000; width:18px; height:18px; display:inline-block; border-radius:3px;"></i> 151-200: Xấu</p>
-        <p style="margin:3px 0;"><i style="background:#99004c; width:18px; height:18px; display:inline-block; border-radius:3px;"></i> 201-300: Rất xấu</p>
-        <p style="margin:3px 0;"><i style="background:#4d0000; width:18px; height:18px; display:inline-block; border-radius:3px;"></i> >300: Nguy hại</p>
-        <p style="margin:3px 0; color:#999;"><i style="background:#ffffff; width:18px; height:18px; display:inline-block; border:1px solid #ccc; border-radius:3px;"></i> Chưa có dữ liệu</p>
+        <p style="margin:0 0 8px ;color:#000; font-weight:bold;font-size:14px;">Chỉ số AQI</p>
+        <p style="margin:3px 0;color:#00e400;display:flex;line-height:20px;align-items:center;justify-content:flex-start;">
+            <i style="background:#00e400; width:18px;margin-right:10px ;height:18px; display:inline-block; border-radius:3px;"></i>
+            0-50: Tốt
+        </p>
+        <p style="margin:3px 0;color:#cccc16;display:flex;line-height:20px;align-items:center;justify-content:flex-start;">
+            <i style="background:#ffff00; width:18px;margin-right:10px ;height:18px; display:inline-block; border-radius:3px;"></i>
+            51-100: Trung bình
+        </p>
+        <p style="margin:3px 0;color:#ff7e00;display:flex;line-height:20px;align-items:center;justify-content:flex-start;">
+            <i style="background:#ff7e00; width:18px;margin-right:10px ;height:18px; display:inline-block; border-radius:3px;"></i>
+            101-150: Kém
+        </p>
+        <p style="margin:3px 0;color:#ff0000;display:flex;line-height:20px;align-items:center;justify-content:flex-start;">
+            <i style="background:#ff0000; width:18px;margin-right:10px ;height:18px; display:inline-block; border-radius:3px;"></i>
+            151-200: Xấu
+        </p>
+        <p style="margin:3px 0;color:#99004c;display:flex;line-height:20px;align-items:center;justify-content:flex-start;">
+            <i style="background:#99004c; width:18px;margin-right:10px ;height:18px; display:inline-block; border-radius:3px;"></i>
+            201-300: Rất xấu
+        </p>
+        <p style="margin:3px 0;color:#999;display:flex;line-height:20px;align-items:center;justify-content:flex-start;">
+            <i style="background:#ffffff; width:18px;margin-right:10px ;height:18px; display:inline-block; border:1px solid #ccc; border-radius:3px;line-height:25px;"></i>
+            Chưa có dữ liệu
+        </p>
     </div>
     '''
     m.get_root().html.add_child(folium.Element(legend_html))

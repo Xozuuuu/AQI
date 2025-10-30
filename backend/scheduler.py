@@ -1,11 +1,18 @@
 # backend/scheduler.py
+import os
+import sys
+
+# THÊM ĐƯỜNG DẪN GỐC DỰ ÁN (KHẮC PHỤC ModuleNotFoundError)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PROJECT_ROOT)  # Thêm vào đầu list để ưu tiên
+
+# Cấu hình logging
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
 from backend.data_processing import process_data
 from datetime import datetime
 import time
 
-# Cấu hình logging
 logging.basicConfig(
     filename='logs/backend_log.txt',
     level=logging.INFO,

@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium  # THAY: st_folium thay vì folium_static
 from frontend.visualize import create_map  # OK vì frontend là package
 
 # =================================================================
@@ -18,11 +18,11 @@ st.set_page_config(
 )
 
 # =================================================================
-# 2. CSS ĐỂ BẢN ĐỒ TO HƠN (GIỮ NGUYÊN CÁI CŨ + TỐI ƯU)
+# 2. CSS ĐỂ BẢN ĐỒ TO HƠN
 # =================================================================
 st.markdown("""
 <style>
-/* Bắt iframe của folium_static */
+/* Bắt iframe của st_folium */
 iframe {
     width: 100% !important;     /* Rộng full chiều ngang */
     height: 85vh !important;    /* Cao 85% màn hình */
@@ -49,11 +49,11 @@ if st.button("Cập nhật dữ liệu AQI", type="primary"):
             st.error(f"Lỗi: {e}")
 
 # =================================================================
-# 4. BẢN ĐỒ SIÊU TO (CHỈ SỬA DÒNG NÀY)
+# 4. BẢN ĐỒ SIÊU TO (THAY: st_folium)
 # =================================================================
 with st.spinner("Đang vẽ bản đồ..."):
     m = create_map()
-    folium_static(m, width=1400, height=700)  # TO GẤP 3 LẦN
+    st_folium(m, width=1400, height=700, returned_objects=[])  # THAY: st_folium
 
 # =================================================================
 # 5. CHÚ THÍCH

@@ -1,46 +1,42 @@
-# run.py - Chạy Scheduler + Streamlit cùng lúc (không block)
-
-import subprocess
+# run.py
+import os
+import sys
 import threading
 import time
-import os
-import sys  # <-- 1. IMPORT SYS
+import subprocess
 
-# Đảm bảo thư mục logs
-os.makedirs("logs", exist_ok=True)
+# Đặt thư mục gốc dự án
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(PROJECT_ROOT)
 
+# =================================================================
+# 1. KHỞI ĐỘNG SCHEDULER (CẬP NHẬT AQI HÀNG NGÀY)
+# =================================================================
 def start_scheduler():
-    print("Starting AQI Scheduler (8:00 AM daily)...")
-    subprocess.Popen([
-        sys.executable, "-m", "backend.scheduler"  # <-- 2. USE SYS.EXECUTABLE
-    ], creationflags=subprocess.CREATE_NEW_CONSOLE) # Mở cửa sổ mới
+    print("Khởi động scheduler cập nhật AQI lúc 8:00 AM...")
+    subprocess.Popen([sys.executable, os.path.join(PROJECT_ROOT, "backend", "scheduler.py")])
+    print("Scheduler đã chạy nền!")
 
-def start_streamlit():
-    print("Starting Streamlit Dashboard at http://localhost:8501 ...")
-    subprocess.Popen([
-        sys.executable, "-m", "streamlit", "run", "frontend/app.py", # <-- 3. USE SYS.EXECUTABLE
-        "--server.port=8501",
-        "--server.address=0.0.0.0"
-    ], creationflags=subprocess.CREATE_NEW_CONSOLE)
+# =================================================================
+# 2. CHẠY STREAMLIT APP
+# =================================================================
+def run_streamlit():
+    app_path = os.path.join(PROJECT_ROOT, "frontend", "app.py")
+    print(f"Khởi động Streamlit tại: http://localhost:8501")
+    subprocess.run([sys.executable, "-m", "streamlit", "run", app_path, "--server.port=8501"])
 
-if __name__ == '__main__':
-    # Bắt đầu scheduler
+# =================================================================
+# 3. CHẠY CẢ HAI TRONG MỘT FILE
+# =================================================================
+if __name__ == "__main__":
+    print("="*60)
+    print("       AIRWATCH VN - HỆ THỐNG GIÁM SÁT AQI")
+    print("="*60)
+
+    # Bước 1: Khởi động scheduler (chạy nền)
     scheduler_thread = threading.Thread(target=start_scheduler, daemon=True)
     scheduler_thread.start()
+    time.sleep(2)  # Đợi scheduler khởi động
 
-    time.sleep(3) # Đợi scheduler khởi động
-
-    # Bắt đầu Streamlit
-    start_streamlit()
-
-    print("\nCẢ 2 ĐÃ CHẠY!")
-    print("→ Scheduler: nền, cập nhật 8h sáng")
-    print("→ Dashboard: http://localhost:8501")
-    print("→ Nhấn Ctrl+C để dừng run.py")
-
-    # Giữ run.py chạy mãi
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("\nDừng run.py...")
+    # Bước 2: Chạy Streamlit (chặn luồng chính)
+    run_streamlit()
