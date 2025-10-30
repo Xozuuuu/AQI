@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 import sys
-sys.path.append('E:\Do An TTDH\AQI')  # Thêm thư mục cha để import config
+sys.path.append('C:/DO_AN_CHUYEN_NGANH')  # Thêm thư mục cha để import config
 import config
 
 def fetch_aqi():
