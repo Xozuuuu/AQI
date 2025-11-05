@@ -72,16 +72,16 @@ def create_popup_html(row):
     color = get_color(aqi)
 
     html = f"""
-    <div style="font-family: Arial, sans-serif; width: 270px; padding: 8px;">
-        <h4 style="margin: 0 0 6px; color: #222; font-size: 16px;">{province}</h4>
-        <p style="margin: 3px 0;"><b>AQI:</b> 
+    <div style="font-family: Arial, sans-serif; max-width: 270px;max-height:270px; padding: 8px;">
+        <h4 style="margin: 0 0 6px; color: #222;font-weight:bold; font-size: 13px;">{province}</h4>
+        <p style="margin: 3px 0; font-size:13px;"><b>AQI:</b> 
             <span style="font-size: 1.3em; color: {color};">
                 {aqi if not pd.isna(aqi) else 'Chưa có dữ liệu'}
             </span>
         </p>
-        <p style="margin: 3px 0;"><b>Cập nhật:</b> {date}</p>
-        <p style="margin: 6px 0 3px;"><b>Tình trạng:</b> 
-            <span style="font-weight: bold; color: {color};">{status}</span>
+        <p style="margin: 3px 0;font-size:13px;"><b>Cập nhật:</b> {date}</p>
+        <p style="margin: 6px 0 3px;font-size:13px;"><b>Tình trạng:</b> 
+            <span style="font-weight: bold;font-size:13px; color: {color};">{status}</span>
         </p>
     """
 
@@ -91,35 +91,35 @@ def create_popup_html(row):
         if status == 'Tốt':
             html += """
             <hr style="border: 0; border-top: 1px dashed #aaa; margin: 10px 0;">
-            <p style="margin: 8px 0; color: #2e8b57; font-weight: bold; text-align: center; font-size: 14px;">
+            <p style="margin: 8px 0; color: #2e8b57; font-weight: bold; text-align: center; font-size: 10px;">
                 Chất lượng không khí bây giờ khá tốt
             </p>
             """
         elif status == 'Trung Bình':
             html += """
             <hr style="border: 0; border-top: 1px dashed #aaa; margin: 10px 0;">
-            <p style="margin: 8px 0; color: #ff8c00; font-weight: bold; text-align: center; font-size: 14px;">
+            <p style="margin: 8px 0; color: #ff8c00; font-weight: bold; text-align: center; font-size: 10px;">
                 Chất lượng không khí ở mức trung bình
             </p>
             """
         elif status == 'Kém':
             html += """
             <hr style="border: 0; border-top: 1px dashed #aaa; margin: 10px 0;">
-            <p style="margin: 8px 0; color: #ff4500; font-weight: bold; text-align: center; font-size: 14px;">
+            <p style="margin: 8px 0; color: #ff4500; font-weight: bold; text-align: center; font-size: 10px;">
                 Chất lượng không khí kém, mang theo khẩu trang khi ra ngoài
             </p>
             """
         elif status == 'Xấu':
             html += """
             <hr style="border: 0; border-top: 1px dashed #aaa; margin: 10px 0;">
-            <p style="margin: 8px 0; color: #b22222; font-weight: bold; text-align: center; font-size: 14px;">
+            <p style="margin: 8px 0; color: #b22222; font-weight: bold; text-align: center; font-size: 10px;">
                 Chất lượng không khí xấu, luôn đeo khẩu trang khi ra ngoài
             </p>
             """
         elif status == 'Rất xấu':
             html += """
             <hr style="border: 0; border-top: 1px dashed #aaa; margin: 10px 0;">
-            <p style="margin: 8px 0; color: #8b0000; font-weight: bold; text-align: center; font-size: 14px;">
+            <p style="margin: 8px 0; color: #8b0000; font-weight: bold; text-align: center; font-size: 10px;">
                 Chất lượng không khí rất xấu, tránh ra ngoài
             </p>
             """
@@ -137,7 +137,7 @@ def create_popup_html(row):
 # (Hàm này của bạn đã đúng, không cần sửa)
 def create_map():
     gdf = gpd.read_file(config.DATA_PATH)
-    m = folium.Map(location=[16.0, 107.0], zoom_start=7, tiles='CartoDB positron')
+    m = folium.Map(location=[16.0, 107.0], zoom_start=7, tiles=None , bgcolor='#e6f2ff')
 
     for _, row in gdf.iterrows():
         aqi = row['AQI']
@@ -162,7 +162,7 @@ def create_map():
     <div style="position: fixed; bottom: 20px; left: 20px; z-index: 1000; 
                 background: white; padding: 12px; border: 1px solid #333; border-radius: 8px; 
                 font-family: Arial; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-        <p style="margin:0 0 8px ;color:#000; font-weight:bold;font-size:14px;">Chỉ số AQI</p>
+        <p style="margin:0 0 8px ;color:#000; font-weight:bold;font-size:10px;">Chỉ số AQI</p>
         <p style="margin:3px 0;color:#00e400;display:flex;line-height:20px;align-items:center;justify-content:flex-start;">
             <i style="background:#00e400; width:18px;margin-right:10px ;height:18px; display:inline-block; border-radius:3px;"></i>
             0-50: Tốt
