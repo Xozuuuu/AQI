@@ -137,7 +137,7 @@ def create_popup_html(row):
 # (Hàm này của bạn đã đúng, không cần sửa)
 def create_map():
     gdf = gpd.read_file(config.DATA_PATH)
-    m = folium.Map(location=[16.0, 107.0], zoom_start=7, tiles=None , bgcolor='#e6f2ff')
+    m = folium.Map(location=[16.0, 107.0], zoom_start=6, tiles=None , bgcolor='#e6f2ff')
 
     for _, row in gdf.iterrows():
         aqi = row['AQI']
@@ -189,5 +189,7 @@ def create_map():
         </p>
     </div>
     '''
+    # =======================
+    
     m.get_root().html.add_child(folium.Element(legend_html))
     return m

@@ -18,13 +18,31 @@ st.set_page_config(
 )
 
 # =================================================================
-# 2. CSS ĐỂ BẢN ĐỒ TO HƠN
+# 2. CSS ĐỂ BẢN ĐỒ TO HƠN (VÀ ẨN HEADER/FOOTER)
 # =================================================================
 st.markdown("""
 <style>
+.block-container {
+    padding-top : 0.5rem;
+    padding-bottom : 1rem;
+    padding-left:5rem;
+    padding-right:5rem;
+}
+/* === MỚI: Ẩn Header (chứa nút "Deploy") === */
+[data-testid="stHeader"] {
+    display: none;
+}
+
+/* === MỚI: Ẩn Footer (chứa "Made with Streamlit") === */
+footer {
+    display: none;
+}
+/* ============================================= */
+
+
 /* Bắt iframe của st_folium */
 iframe {
-    width: 100% !important;     /* Rộng full chiều ngang */
+    width: 800px !important;      /* Rộng 70% theo code của bạn */
     height: 85vh !important;    /* Cao 85% màn hình */
     border: none !important;
     border-radius: 12px !important;
@@ -34,7 +52,7 @@ iframe {
 """, unsafe_allow_html=True)
 
 # =================================================================
-# 3. NỘI DUNG CHÍNH (GIỮ NGUYÊN 100%)
+# 3. NỘI DUNG CHÍNH
 # =================================================================
 st.title("AirWatch – Giám sát chất lượng không khí Việt Nam")
 st.markdown("**Cập nhật AQI tự động từ AQICN, hiển thị theo tỉnh.**")
@@ -49,11 +67,11 @@ if st.button("Cập nhật dữ liệu AQI", type="primary"):
             st.error(f"Lỗi: {e}")
 
 # =================================================================
-# 4. BẢN ĐỒ SIÊU TO (THAY: st_folium)
+# 4. BẢN ĐỒ
 # =================================================================
 with st.spinner("Đang vẽ bản đồ..."):
     m = create_map()
-    st_folium(m, width=1400, height=700, returned_objects=[])  # THAY: st_folium
+    st_folium(m, width=800, height=800, returned_objects=[])  # THAY: st_folium
 
 # =================================================================
 # 5. CHÚ THÍCH
