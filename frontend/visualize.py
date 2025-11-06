@@ -11,11 +11,11 @@ IMG_DIR = Path(__file__).parent / "static" / "img"
 
 # 2. SỬA LẠI TÊN FILE CHO KHỚP VỚI THƯ MỤC CỦA BẠN
 ICONS = {
-    'Tốt': 'Smile.png',
-    'Trung bình': 'Bad.png',
-    'Kém': 'Horor.png',
-    'Xấu': 'Reject.png',
-    'Rất xấu': 'Alert.png',
+    'Tốt': 'Smile_ljng.png',
+    'Trung bình': 'Bad_ljng.png',
+    'Kém': 'Horror_ljng.png',
+    'Xấu': 'Reject_ljng.png',
+    'Rất xấu': 'Alert_gemini-removebg-preview.png',
 }
 
 # 3. SỬA HÀM NÀY ĐỂ MÃ HÓA BASE64
@@ -95,7 +95,7 @@ def create_popup_html(row):
                 Chất lượng không khí bây giờ khá tốt
             </p>
             """
-        elif status == 'Trung Bình':
+        elif status == 'Trung bình':
             html += """
             <hr style="border: 0; border-top: 1px dashed #aaa; margin: 10px 0;">
             <p style="margin: 8px 0; color: #ff8c00; font-weight: bold; text-align: center; font-size: 10px;">
@@ -126,7 +126,7 @@ def create_popup_html(row):
         html += f"""
         <div style="text-align: center; margin: 10px 0; background: transparent;">
             <img src="{icon_url}" width="120" height="120" 
-                 style="box-shadow: 0 2px 8px rgba(0,0,0,0.2); background:transparent;">
+                 style="background:transparent;">
         </div>
         """
 
@@ -135,26 +135,39 @@ def create_popup_html(row):
 
 # === TẠO BẢN ĐỒ ===
 # (Hàm này của bạn đã đúng, không cần sửa)
-def create_map():
+# === TẠO BẢN ĐỒ ===
+def create_map(selected_province=None):  # THÊM THAM SỐ
     gdf = gpd.read_file(config.DATA_PATH)
-    m = folium.Map(location=[16.0, 107.0], zoom_start=6, tiles=None , bgcolor='#e6f2ff')
+    m = folium.Map(location=[16.0, 107.0], zoom_start=6, tiles=None, bgcolor='#e6f2ff')
 
     for _, row in gdf.iterrows():
         aqi = row['AQI']
+        province = row['NAME_1']
         geojson = row['geometry'].__geo_interface__
         popup = folium.Popup(create_popup_html(row), max_width=1000)
 
+        # ĐÁNH DẤU TỈNH ĐƯỢC CHỌN
+        is_selected = (province == selected_province)
+        weight = 5 if is_selected else 1
+        opacity = 0.9 if is_selected else 0.7
+        border_color = '#000' if is_selected else '#555'
+
         folium.GeoJson(
             geojson,
-            style_function=lambda x, aqi=aqi: {
+            style_function=lambda x, aqi=aqi, w=weight, o=opacity, c=border_color: {
                 'fillColor': get_color(aqi),
-                'color': '#555',
-                'weight': 1,
-                'fillOpacity': 0.7 if not pd.isna(aqi) else 0.3,
+                'color': c,
+                'weight': w,
+                'fillOpacity': o if not pd.isna(aqi) else 0.3,
             },
             popup=popup,
-            tooltip=folium.Tooltip(f"<b>{row['NAME_1']}</b><br>AQI: {aqi if not pd.isna(aqi) else 'N/A'}")
+            tooltip=folium.Tooltip(f"<b>{province}</b><br>AQI: {aqi if not pd.isna(aqi) else 'N/A'}")
         ).add_to(m)
+
+        # ZOOM + MỞ POPUP KHI CHỌN
+        if is_selected:
+            bounds = row['geometry'].bounds
+            m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
     # === LEGEND ===
     # (Legend của bạn đã đúng, không cần sửa)
