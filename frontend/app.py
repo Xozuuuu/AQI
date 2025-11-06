@@ -10,6 +10,7 @@ import geopandas as gpd
 import config
 import pandas as pd
 import urllib.parse # Thư viện để mã hóa URL (quan trọng)
+from textwrap import dedent
 
 # =================================================================
 # 1. CẤU HÌNH TRANG
@@ -83,8 +84,12 @@ iframe {
     cursor: pointer;
     transition: all 0.2s;
     display: block; 
-    text-decoration: none; 
 }
+
+.right-sidebar-list a {
+    text-decoration: none;
+}
+
 .province-item:hover {
     background: #3a3a3a;
     border-color: #505050;
@@ -173,12 +178,13 @@ with col2:
         
         province_url_encoded = urllib.parse.quote(province)
         
-        html_list_content += f"""
+        # Tránh thụt lề 4+ spaces trong Markdown (bị hiển thị như code block)
+        html_list_content += dedent(f"""
         <a href="?province={province_url_encoded}" target="_self" class="province-item">
             {province}
             <span class='aqi-highlight' style='color: {color};'>{aqi_str}</span>
         </a>
-        """
+        """)
     
     html_list_content += f'<hr><a href="?province=None" target="_self" class="province-item" style="text-align: center;">🗑️ Ẩn đánh dấu</a>'
     html_list_content += '</div>'
