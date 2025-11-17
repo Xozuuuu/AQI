@@ -108,6 +108,25 @@ iframe {
     font-size: 16px;
     float: right; 
 }
+
+.bg-img {
+    margin-top: 24px;
+    width: 100%;
+    height: 400px;
+    background-origin : border-box;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    color: white;
+    border : 2px solid white;
+    padding: 40px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    font-family: 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+}  
+                  
 </style>
 """, unsafe_allow_html=True)
 
@@ -204,12 +223,37 @@ with col2:
 
 # =========================================================
 
+# =================================================================
+# THANH THÔNG TIN – DÙNG ẢNH LOCAL (giữ nguyên mọi thứ bạn đang có)
+# =================================================================
+import base64
+from pathlib import Path
+
+# Hàm nhúng ảnh local thành base64 (không cần server)
+def img_to_base64(img_path):
+    if img_path.exists():
+        with open(img_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return None
+
+# Thư mục ảnh tỉnh
+IMG_DIR = Path(__file__).parent / "static" / "province"
+
+# Mapping tên tỉnh → tên file ảnh (không dấu, chữ thường)
+PROVINCE_IMAGES = {
+    "Hà Nội": "hanoi.png",
+    "Hồ Chí Minh": "hochiminh.png",
+    "Đà Nẵng": "danang.png",
+    "Thừa Thiên Huế": "hue.png",
+    "Hải Phòng": "haiphong.png",
+    "Cần Thơ": "cantho.png",
+    # Thêm dần khi có ảnh mới
+}
+
 if st.session_state.selected_province:
-    # === TÌM TỈNH ĐƯƯỢC CHỌN – AN TOÀN ===
     selected_data = gdf[gdf['NAME_1'] == st.session_state.selected_province]
-        
+    
     if selected_data.empty:
-        # Trường hợp tỉnh không tồn tại trong dữ liệu (hiếm nhưng có thể xảy ra)
         st.warning(f"Không tìm thấy dữ liệu cho tỉnh: {st.session_state.selected_province}")
         st.session_state.selected_province = None
     else:
@@ -218,7 +262,7 @@ if st.session_state.selected_province:
         aqi_raw = row['AQI']
         update_date = row.get('Date', 'Không rõ')
 
-        # Xử lý AQI
+        # Xử lý AQI (giữ nguyên logic cũ của bạn)
         if pd.isna(aqi_raw):
             aqi_display = "N/A"
             status = "Chưa có dữ liệu"
@@ -237,36 +281,17 @@ if st.session_state.selected_province:
             else:
                 status, status_color = "Rất xấu", "#99004c"
 
-        # Ảnh nền theo tỉnh
-        province_images = {
-            "Hà Nội": "https://lalago.vn/wp-content/uploads/2025/08/Khue-Van-Cac-4.jpg",
-            "Hồ Chí Minh": "https://i.imgur.com/2Kj4p8L.jpg",
-            "Đà Nẵng": "https://i.imgur.com/8WvZ8xN.jpg",
-            "Thừa Thiên Huế": "https://i.imgur.com/7kPqR3m.jpg",
-            "Hải Phòng": "https://i.imgur.com/X5vN9Lm.jpg",
-            "Cần Thơ": "https://i.imgur.com/9LmPq8v.jpg",
-        }
-        bg_image = province_images.get(province, "https://i.imgur.com/2f8p8vP.jpg")
+        # LẤY ẢNH LOCAL
+        filename = PROVINCE_IMAGES.get(province)
+        img_path = IMG_DIR / filename if filename else None
+        encoded = img_to_base64(img_path) if img_path else None
+        bg_image = f"data:image/png;base64,{encoded}" if encoded else "https://i.imgur.com/2f8p8vP.jpg"  # fallback tạm
 
-        # THANH THÔNG TIN ĐẸP
+        # GIỮ NGUYÊN 100% STYLE CỦA BẠN – CHỈ ĐỔI URL ẢNH
         st.markdown(f"""
-        <div style="
-            margin-top: 24px;
-            width: 100%;
-            height: 340px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.85)), 
-                url('{bg_image}') center/cover no-repeat;
-            border-radius: 16px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-            color: white;
-            padding: 40px 50px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            font-family: 'Segoe UI', sans-serif;
-            position: relative;
-            overflow: hidden;
-        ">
+        <div class="bg-img" 
+                 style="background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.85)), 
+                                    url('{bg_image}') center /cover no-repeat;">
             <div style="position: absolute; top: 20px; right: 30px; opacity: 0.8; font-size: 14px;">
                 Cập nhật: {update_date}
             </div>
@@ -288,7 +313,7 @@ if st.session_state.selected_province:
         </div>
         """, unsafe_allow_html=True)
 else:
-    # Khi chưa chọn tỉnh
+    # Giữ nguyên phần chưa chọn tỉnh của bạn
     st.markdown("""
     <div style="
         margin-top: 24px;
@@ -308,5 +333,5 @@ else:
         Chọn một tỉnh từ bản đồ hoặc danh sách bên phải để xem chi tiết
     </div>
     """, unsafe_allow_html=True)
-   
+
 st.caption("**Dữ liệu cập nhật tự động lúc 8:00 AM** | Nguồn: AQICN + GADM")
