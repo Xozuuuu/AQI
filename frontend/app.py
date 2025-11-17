@@ -12,6 +12,13 @@ import pandas as pd
 import urllib.parse # Thư viện để mã hóa URL (quan trọng)
 from textwrap import dedent
 
+@st.cache_data(ttl=3600)  # Cache 1 giờ
+def load_data():
+    gdf = gpd.read_file(config.DATA_PATH)
+    gdf['AQI'] = pd.to_numeric(gdf['AQI'], errors='coerce')
+    return gdf
+
+gdf = load_data()  # DÙNG CHUNG CHO TOÀN BỘ APP
 # =================================================================
 # 1. CẤU HÌNH TRANG
 # =================================================================
@@ -142,6 +149,8 @@ with col1:
     m = create_map(st.session_state.selected_province)
     st_folium(m, width=None, height=800, returned_objects=[])
 
+    #========================================================
+    # =================================================================
 with col2:
     # ===== SỬA LỖI TẠI ĐÂY =====
     
@@ -152,8 +161,9 @@ with col2:
     # 2. HIỂN THỊ DANH SÁCH CUỘN (SCROLLBAR)
     
     # Đọc và lọc dữ liệu
-    gdf = gpd.read_file(config.DATA_PATH)
-    gdf['AQI'] = pd.to_numeric(gdf['AQI'], errors='coerce')
+    # gdf = gpd.read_file(config.DATA_PATH)
+    # gdf['AQI'] = pd.to_numeric(gdf['AQI'], errors='coerce')
+    # provinces = gdf.sort_values('AQI', ascending=False).dropna(subset=['AQI'])
     provinces = gdf.sort_values('AQI', ascending=False).dropna(subset=['AQI'])
     
     # Bắt đầu xây dựng chuỗi HTML (cho phần list)
@@ -192,4 +202,111 @@ with col2:
     # Hiển thị list bằng 1 lệnh st.markdown
     st.markdown(html_list_content, unsafe_allow_html=True)
 
+# =========================================================
+
+if st.session_state.selected_province:
+    # === TÌM TỈNH ĐƯƯỢC CHỌN – AN TOÀN ===
+    selected_data = gdf[gdf['NAME_1'] == st.session_state.selected_province]
+        
+    if selected_data.empty:
+        # Trường hợp tỉnh không tồn tại trong dữ liệu (hiếm nhưng có thể xảy ra)
+        st.warning(f"Không tìm thấy dữ liệu cho tỉnh: {st.session_state.selected_province}")
+        st.session_state.selected_province = None
+    else:
+        row = selected_data.iloc[0]
+        province = row['NAME_1']
+        aqi_raw = row['AQI']
+        update_date = row.get('Date', 'Không rõ')
+
+        # Xử lý AQI
+        if pd.isna(aqi_raw):
+            aqi_display = "N/A"
+            status = "Chưa có dữ liệu"
+            status_color = "#999999"
+        else:
+            aqi = int(aqi_raw)
+            aqi_display = str(aqi)
+            if aqi <= 50:
+                status, status_color = "Tốt", "#00e400"
+            elif aqi <= 100:
+                status, status_color = "Trung bình", "#cccc16"
+            elif aqi <= 150:
+                status, status_color = "Kém", "#ff7e00"
+            elif aqi <= 200:
+                status, status_color = "Xấu", "#ff0000"
+            else:
+                status, status_color = "Rất xấu", "#99004c"
+
+        # Ảnh nền theo tỉnh
+        province_images = {
+            "Hà Nội": "https://lalago.vn/wp-content/uploads/2025/08/Khue-Van-Cac-4.jpg",
+            "Hồ Chí Minh": "https://i.imgur.com/2Kj4p8L.jpg",
+            "Đà Nẵng": "https://i.imgur.com/8WvZ8xN.jpg",
+            "Thừa Thiên Huế": "https://i.imgur.com/7kPqR3m.jpg",
+            "Hải Phòng": "https://i.imgur.com/X5vN9Lm.jpg",
+            "Cần Thơ": "https://i.imgur.com/9LmPq8v.jpg",
+        }
+        bg_image = province_images.get(province, "https://i.imgur.com/2f8p8vP.jpg")
+
+        # THANH THÔNG TIN ĐẸP
+        st.markdown(f"""
+        <div style="
+            margin-top: 24px;
+            width: 100%;
+            height: 340px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.85)), 
+                url('{bg_image}') center/cover no-repeat;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            color: white;
+            padding: 40px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            font-family: 'Segoe UI', sans-serif;
+            position: relative;
+            overflow: hidden;
+        ">
+            <div style="position: absolute; top: 20px; right: 30px; opacity: 0.8; font-size: 14px;">
+                Cập nhật: {update_date}
+            </div>
+            <h1 style="margin:0; font-size: 58px; font-weight: bold; text-shadow: 0 6px 20px rgba(0,0,0,0.8);">
+                {province}
+            </h1>
+            <h2 style="margin: -10px 0px 20px; font-size: 40px; font-weight: bold; color: {status_color}; 
+                text-shadow: 0 6px 20px rgba(0,0,0,0.9);">
+                {aqi_display} AQI - Tình Trạng : {status}
+            </h2>
+            <div style="font-size: 15px; font-weight: bold;">
+                <span style="background: rgb(235 193 193 / 70%); 
+                        padding: 12px 12px; border-radius: 80px; 
+                        backdrop-filter: blur(15px); 
+                        box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
+                    Cuộn xuống để biết thêm chi tiết ▼
+                </span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+else:
+    # Khi chưa chọn tỉnh
+    st.markdown("""
+    <div style="
+        margin-top: 24px;
+        width: 100%;
+        height: 340px;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 32px;
+        font-weight: bold;
+        text-align: center;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    ">
+        Chọn một tỉnh từ bản đồ hoặc danh sách bên phải để xem chi tiết
+    </div>
+    """, unsafe_allow_html=True)
+   
 st.caption("**Dữ liệu cập nhật tự động lúc 8:00 AM** | Nguồn: AQICN + GADM")
