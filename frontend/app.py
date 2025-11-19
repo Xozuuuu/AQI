@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_folium import st_folium
 from frontend.visualize import create_map
 import geopandas as gpd
@@ -11,6 +12,7 @@ import config
 import pandas as pd
 import urllib.parse # Thư viện để mã hóa URL (quan trọng)
 from textwrap import dedent
+from frontend.components.forecast_bar import create_forecast_bar
 
 @st.cache_data(ttl=3600)  # Cache 1 giờ
 def load_data():
@@ -318,8 +320,8 @@ else:
     <div style="
         margin-top: 24px;
         width: 100%;
-        height: 340px;
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        height: 400px;
+        background: linear-gradient(135deg, #000428 0%, #004e92 100%);
         border-radius: 16px;
         display: flex;
         align-items: center;
@@ -331,6 +333,31 @@ else:
         box-shadow: 0 12px 40px rgba(0,0,0,0.3);
     ">
         Chọn một tỉnh từ bản đồ hoặc danh sách bên phải để xem chi tiết
+    </div>
+    """, unsafe_allow_html=True)
+
+if st.session_state.selected_province:
+    forecast_html = create_forecast_bar(st.session_state.selected_province)
+    components.html(forecast_html, height=430, scrolling=False)
+else:
+    # Giữ nguyên phần chưa chọn tỉnh của bạn
+    st.markdown("""
+    <div style="
+        margin-top: 24px;
+        width: 100%;
+        height: 400px;
+        background: linear-gradient(135deg, #000428 0%, #004e92 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 32px;
+        font-weight: bold;
+        text-align: center;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    ">
+        Dự báo 5 ngày tiếp theo ! 
     </div>
     """, unsafe_allow_html=True)
 

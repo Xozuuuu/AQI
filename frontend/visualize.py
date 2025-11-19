@@ -140,7 +140,10 @@ def create_map(selected_province=None):  # THÊM THAM SỐ
     gdf = gpd.read_file(config.DATA_PATH)
     m = folium.Map(location=[16.0, 107.0], zoom_start=6, tiles=None, bgcolor='#e6f2ff')
 
+
     for _, row in gdf.iterrows():
+        source = row.get('AQI_source' ,'Trạm đo')
+
         aqi = row['AQI']
         province = row['NAME_1']
         geojson = row['geometry'].__geo_interface__
@@ -148,20 +151,32 @@ def create_map(selected_province=None):  # THÊM THAM SỐ
 
         # ĐÁNH DẤU TỈNH ĐƯỢC CHỌN
         is_selected = (province == selected_province)
-        weight = 5 if is_selected else 1
-        opacity = 0.9 if is_selected else 0.7
-        border_color = '#000' if is_selected else '#555'
+        
+        if is_selected:
+            line_weight = 6.0
+            fill_opacity = 0.85
+            border_color = "#000000"
+
+        else:
+            line_weight = 1.0 if source == "Nội suy (IDW)" else 1.0
+            fill_opacity = 0.65
+            border_color = "#000000" if source == "Nội suy (IDW)" else "#444444"
 
         folium.GeoJson(
             geojson,
-            style_function=lambda x, aqi=aqi, w=weight, o=opacity, c=border_color: {
+            style_function=lambda x, aqi=aqi, lw=line_weight , fo=fill_opacity, bc=border_color: {
                 'fillColor': get_color(aqi),
-                'color': c,
-                'weight': w,
-                'fillOpacity': o if not pd.isna(aqi) else 0.3,
+                'color': bc,
+                'weight': lw,
+                'fillOpacity': fo,
             },
             popup=popup,
-            tooltip=folium.Tooltip(f"<b>{province}</b><br>AQI: {aqi if not pd.isna(aqi) else 'N/A'}")
+            tooltip=folium.Tooltip(
+                f"<b>{province}</b><br>"
+                f"AQI: <b>{int(aqi) if not pd.isna(aqi) else 'N/A'}</b><br>"
+                f"Nguồn: <i>{source}</i>",
+                style="font-family: Arial; font-size: 13px; background: rgba(255,255,255,0.9); padding: 6px; border-radius: 6px;"
+            )
         ).add_to(m)
 
         # ZOOM + MỞ POPUP KHI CHỌN
