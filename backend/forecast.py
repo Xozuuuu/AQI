@@ -39,46 +39,78 @@ def get_city_key(province_vn):
             return key
     return None
 
+# backend/forecast.py — CHỈ SỬA 2 HÀM NÀY THÔI!
+
+from datetime import datetime, timedelta, date
+
+def get_day_name_from_offset(offset: int) -> str:
+    """Trả về tên ngày theo offset (0 = hôm nay, 1 = ngày mai, ...)"""
+    names = ["Hôm nay", "Ngày mai", "Ngày kia", "Ngày kia nữa", "5 ngày nữa"]
+    return names[offset] if 0 <= offset < 5 else f"{offset} ngày nữa"
+
 def get_forecast_real(province_name: str):
-    """Lấy dự báo AQI 5 ngày thật từ WAQI"""
+    """Lấy dự báo AQI 5 ngày THẬT và ĐÚNG NGÀY từ hôm nay trở đi"""
     city_key = get_city_key(province_name)
     if not city_key:
-        return get_forecast_fake(province_name)  # fallback nếu chưa có trong danh sách
+        return get_forecast_fake(province_name)
     
     url = f"https://api.waqi.info/feed/{city_key}/?token={WAQI_TOKEN}"
     try:
         response = requests.get(url, timeout=10)
-        if response.status_code != 200:
+        if response.status_code != 200 or response.json().get("status") != "ok":
             return get_forecast_fake(province_name)
         
-        data = response.json()
-        if data.get("status") != "ok":
-            return get_forecast_fake(province_name)
+        raw_forecast = response.json()["data"]["forecast"]["daily"]["pm25"]
         
-        forecast = data["data"]["forecast"]["daily"]["pm25"]
+        # Ép về định dạng datetime để dễ xử lý
+        forecast_days = []
+        for item in raw_forecast:
+            try:
+                day_date = datetime.strptime(item["day"], "%Y-%m-%d").date()
+                forecast_days.append({
+                    "date": day_date,
+                    "aqi": int(item["avg"])
+                })
+            except:
+                continue
         
+        # Lấy ngày hôm nay
+        today = date.today()
         result = []
-        for item in forecast[:5]:  # lấy 5 ngày
-            date = item["day"]
-            aqi = item["avg"]
+        
+        # Tìm và lấy đúng 5 ngày TIẾP THEO từ hôm nay (kể cả nếu WAQI có ngày hôm qua)
+        for i in range(5):
+            target_date = today + timedelta(days=i)
+            # Tìm ngày khớp nhất trong dữ liệu WAQI
+            match = None
+            for item in forecast_days:
+                if item["date"] == target_date:
+                    match = item
+                    break
+            # Nếu không có → dùng dự báo gần nhất hoặc fallback
+            if match is None:
+                # Tìm ngày gần nhất (trước/sau)
+                closest = min(forecast_days, key=lambda x: abs((x["date"] - target_date).days), default=None)
+                aqi = closest["aqi"] if closest else 50 + i*5
+            else:
+                aqi = match["aqi"]
+            
+            formatted_date = target_date.strftime("%d/%m")
+            day_name = get_day_name_from_offset(i)
+            
             result.append({
-                "date": datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m"),
-                "day": get_day_name(date),
+                "date": formatted_date,
+                "day": day_name,
                 "aqi": aqi,
                 "status": get_status(aqi),
                 "color": get_color(aqi)
             })
+        
         return result
         
     except Exception as e:
-        print(f"Lỗi lấy dự báo thật: {e}")
+        print(f"Lỗi API WAQI: {e}")
         return get_forecast_fake(province_name)
-
-def get_day_name(date_str):
-    date = datetime.strptime(date_str, "%Y-%m-%d")
-    days_ahead = (date - datetime.now()).days
-    names = ["Hôm nay", "Ngày mai", "Ngày kia", "Ngày kia nữa", "5 ngày nữa"]
-    return names[days_ahead] if 0 <= days_ahead < 5 else date.strftime("%d/%m")
 
 def get_status(aqi):
     aqi = int(aqi)
@@ -103,14 +135,14 @@ def get_forecast_fake(province_name):
     import numpy as np
     np.random.seed(hash(province_name) % 2**32)
     base = 40 + np.random.randint(-20, 30)
+    today = date.today()
     data = []
     for i in range(5):
-        aqi = max(10, min(300, base + np.random.randint(-15, 20)))
-        date = (datetime.now() + timedelta(days=i)).strftime("%d/%m")
-        day_name = ["Hôm nay", "Ngày mai", "Ngày kia", "Ngày kia nữa", "5 ngày nữa"][i]
+        aqi = max(10, min(300, base + np.random.randint(-20, 25)))
+        target_date = today + timedelta(days=i)
         data.append({
-            "date": date,
-            "day": day_name,
+            "date": target_date.strftime("%d/%m"),
+            "day": get_day_name_from_offset(i),
             "aqi": int(aqi),
             "status": get_status(aqi),
             "color": get_color(aqi)

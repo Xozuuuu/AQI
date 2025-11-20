@@ -33,6 +33,7 @@ def create_forecast_bar(province_name):
         <div class="forecast-card">
             <div class="day-label">{item['day']}</div>
             <div class="icon">{icon_html}</div>
+            <div class="date">{item['date']}</div>
             <div class="aqi-value" style="color:{item['color']}">{item['aqi']}</div>
             <div class="status" style="background:{item['color']}">{item['status']}</div>
         </div>
@@ -60,7 +61,7 @@ def create_forecast_bar(province_name):
             .forecast-container {{
                 margin-top : 20px;
                 width: 100%;
-                height: 425px;
+                height: 450px;
                 background: linear-gradient(135deg, #569156 0%, #000000 100%);
                 border-radius: 28px;
                 padding: 28px 32px;

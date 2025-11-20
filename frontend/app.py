@@ -13,6 +13,7 @@ import pandas as pd
 import urllib.parse # Thư viện để mã hóa URL (quan trọng)
 from textwrap import dedent
 from frontend.components.forecast_bar import create_forecast_bar
+from frontend.components.hourly_chart import create_hourly_chart
 
 @st.cache_data(ttl=3600)  # Cache 1 giờ
 def load_data():
@@ -338,14 +339,14 @@ else:
 
 if st.session_state.selected_province:
     forecast_html = create_forecast_bar(st.session_state.selected_province)
-    components.html(forecast_html, height=430, scrolling=False)
+    components.html(forecast_html, height=450, scrolling=False)
 else:
     # Giữ nguyên phần chưa chọn tỉnh của bạn
     st.markdown("""
     <div style="
         margin-top: 24px;
         width: 100%;
-        height: 400px;
+        height: 450px;
         background: linear-gradient(135deg, #000428 0%, #004e92 100%);
         border-radius: 16px;
         display: flex;
@@ -361,4 +362,43 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-st.caption("**Dữ liệu cập nhật tự động lúc 8:00 AM** | Nguồn: AQICN + GADM")
+st.markdown("""   
+    <style>
+        .hourly-chart-wrapper {
+            margin-top: 20px !important;
+            border: 2px solid white !important;
+            border-radius: 28px !important;
+            padding: 12px !important;
+            background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.95)) !important;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
+            overflow: hidden !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+if st.session_state.selected_province:
+    col = st.container()
+    with col:
+        st.markdown('<div class="hourly-chart-wrapper">', unsafe_allow_html=True)
+        chart = create_hourly_chart(st.session_state.selected_province)
+        if chart:
+            st.plotly_chart(chart, use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
+else:
+    st.markdown("""
+    <div style="margin-top:10px; margin-bottom : 10px ; 
+            width:100% ; height:350px; 
+            background: linear-gradient(135deg, #000428 0%, #004e92 100%); 
+            border-radius: 16px; display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 32px; 
+            font-weight: bold; 
+            text-align: center; 
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);">          
+        Dự báo 24 giờ
+    </div>
+    """, unsafe_allow_html=True)
+
+# st.caption("**Dữ liệu cập nhật tự động lúc 8:00 AM** | Nguồn: AQICN + GADM")
