@@ -364,26 +364,16 @@ else:
 
 st.markdown("""   
     <style>
-        .hourly-chart-wrapper {
-            margin-top: 20px !important;
-            border: 2px solid white !important;
-            border-radius: 28px !important;
-            padding: 12px !important;
-            background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.95)) !important;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
-            overflow: hidden !important;
+        div[data-testid="stPlotlyChart"] {
+            margin-top: 12px !important;
         }
     </style>
     """, unsafe_allow_html=True)
 
 if st.session_state.selected_province:
-    col = st.container()
-    with col:
-        st.markdown('<div class="hourly-chart-wrapper">', unsafe_allow_html=True)
-        chart = create_hourly_chart(st.session_state.selected_province)
-        if chart:
-            st.plotly_chart(chart, use_container_width=True, config={'displayModeBar': False})
-        st.markdown('</div>', unsafe_allow_html=True)
+    chart = create_hourly_chart(st.session_state.selected_province)
+    if chart:
+        st.plotly_chart(chart, use_container_width=True, config={'displayModeBar': False})
 else:
     st.markdown("""
     <div style="margin-top:10px; margin-bottom : 10px ; 

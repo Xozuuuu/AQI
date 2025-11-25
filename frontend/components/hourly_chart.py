@@ -49,50 +49,52 @@ def create_hourly_chart(province_name):
             'font': dict(size=24, color="white")
         },
         plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(15,23,42,0.95)",
+        paper_bgcolor="rgba(180,180,180,0.1)",
         height=350,
-        margin=dict(l=50, r=50, t=80, b=100),
+        margin=dict(l=0, r=0, t=80, b=80),
         xaxis=dict(
             tickfont=dict(size=14, color="white"),
-            gridcolor="rgba(255,255,255,0.15)",
+            gridcolor="rgba(0,0,0,0)",
             zeroline=False
         ),
         yaxis=dict(
-            range=[0, max(max(aqi_values), 100) * 1.3],
+            range=[0, max(max(aqi_values), 100) * 1.2],
             showgrid=True,
-            gridcolor="rgba(255,255,255,0.1)",
-            tickfont=dict(color="white"),
+            gridcolor="rgba(0,0,0,0)",
+            tickfont=dict(color="rgba(0,0,0,0)"),
             title=dict(
-                text="AQI",
-                font=dict(color="white",size=16)
+                font=dict(color="rgba(0,0,0,0)",size=16)
             )
         ),
         hoverlabel=dict(bgcolor="white", font_size=16, font_family="Arial"),
         showlegend=False
     )
 
+
     # Icon + trạng thái dưới mỗi điểm
     icon_map = {"Tốt": "Smiling Face", "Trung bình": "Neutral Face", "Kém": "Face with Mask", "Xấu": "Dizzy Face", "Rất xấu": "Face Vomiting", "Nguy hại": "Skull"}
     for i, item in enumerate(data):
         fig.add_annotation(
             x=times[i],
-            y=-15,
+            y=-12,
             text=icon_map.get(item["status"], "Neutral Face"),
             showarrow=False,
-            font=dict(size=36),
+            font=dict(size=28),
             yshift=10
         )
         fig.add_annotation(
             x=times[i],
-            y=-40,
+            y=-25,
             text=item["status"],
             showarrow=False,
             font=dict(size=12, color="white"),
             bgcolor=item["color"],
             bordercolor="white",
             borderwidth=2,
-            borderpad=6,
-            opacity=0.9
+            borderpad=4,
+            opacity=0.9,
+            xref="x",
+            yref="y"
         )
     
     return fig
