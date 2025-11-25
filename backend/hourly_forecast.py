@@ -1,39 +1,82 @@
 # backend/hourly_forecast.py
 from datetime import datetime, timedelta
 import numpy as np
+import geopandas as gpd
+import config
+import pandas as pd
+
+def get_current_aqi(province_name):
+    """LẤY AQI HIỆN TẠI TỪ FILE GeoJSON"""
+    try:
+        gdf = gpd.read_file(config.DATA_PATH)
+        gdf['AQI'] = pd.to_numeric(gdf['AQI'], errors='coerce')
+        row = gdf[gdf['NAME_1'] == province_name]
+        if not row.empty and pd.notna(row.iloc[0]['AQI']):
+            return int(row.iloc[0]['AQI'])
+    except:
+        pass
+    return None
 
 def get_hourly_forecast(province_name: str):
     """
-    Trả về dự báo AQI 6 điểm trong ngày hôm nay (cách 4 tiếng)
-    Sau này có thể lấy từ WAQI hourly forecast (có thật!)
+    Dự báo AQI từ GIỜ HIỆN TẠI đến 11 PM (23:00)
+    Mỗi điểm cách nhau 2 TIẾNG
+    Ví dụ: 10:00 AM → 12:00 PM → 2:00 PM → 4:00 PM → 6:00 PM → 8:00 PM → 10:00 PM
     """
+    current_aqi = get_current_aqi(province_name)
+    if current_aqi is None:
+        current_aqi = 80  # Giá trị mặc định
+    
     np.random.seed(hash(province_name) % 2**32)
     
-    today = datetime.now().date()
-    hours = [0, 4, 8, 12, 16, 20]  # 00:00, 04:00, 08:00, 12:00, 16:00, 20:00
-    labels = ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00"]
-    display_labels = ["Bây giờ", "4:00 AM", "8:00 AM", "12:00 PM", "4:00 PM", "8:00 PM"]
+    now = datetime.now()
+    current_hour = now.hour
     
-    # Tạo đường cong tự nhiên (giống thực tế: sáng cao, trưa giảm, tối tăng lại)
-    base_pattern = [100, 85, 120, 90, 75, 95]
-    noise = np.random.randint(-25, 25, size=6)
-    aqi_values = np.clip(base_pattern + noise + np.random.randint(-15, 15), 10, 300)
+    # Tạo danh sách các giờ cách nhau 2 tiếng từ hiện tại đến 23:00
+    hours_list = []
+    h = current_hour
+    while h <= 23:
+        hours_list.append(h)
+        h += 2
+    
+    # Nếu giờ cuối chưa đến 23:00, thêm 23:00 (11 PM)
+    if hours_list[-1] < 23:
+        hours_list.append(23)
     
     data = []
-    for i, h in enumerate(hours):
-        time_obj = datetime.combine(today, datetime.min.time()) + timedelta(hours=h)
-        aqi = int(aqi_values[i])
-        status = get_status(aqi)
-        color = get_color(aqi)
+    
+    for i, hour in enumerate(hours_list):
+        # Giờ đầu tiên = AQI hiện tại
+        if i == 0:
+            aqi = current_aqi
+        else:
+            # Dao động ±15% so với current_aqi
+            variation = np.random.randint(-int(current_aqi*0.15), int(current_aqi*0.2))
+            aqi = max(10, min(300, current_aqi + variation))
         
+        # Format label
+        if i == 0:
+            display_label = "Bây giờ"
+        else:
+            if hour == 0:
+                display_label = "12:00 AM"
+            elif hour < 12:
+                display_label = f"{hour}:00 AM"
+            elif hour == 12:
+                display_label = "12:00 PM"
+            else:
+                display_label = f"{hour-12}:00 PM"
+        
+        # Tạo datetime object
+        time_obj = datetime.combine(now.date(), datetime.min.time()) + timedelta(hours=hour)
+        
+        aqi = int(aqi)
         data.append({
             "time": time_obj,
-            "hour_label": labels[i],
-            "display_label": display_labels[i],
+            "display_label": display_label,
             "aqi": aqi,
-            "status": status,
-            "color": color,
-            "icon": get_icon_name(status)
+            "status": get_status(aqi),
+            "color": get_color(aqi)
         })
     
     return data
@@ -53,13 +96,3 @@ def get_color(aqi):
     elif aqi <= 200: return "#ff0000"
     elif aqi <= 300: return "#99004c"
     else: return "#4d0000"
-
-def get_icon_name(status):
-    return {
-        "Tốt": "smile",
-        "Trung bình": "neutral",
-        "Kém": "frown",
-        "Xấu": "sad",
-        "Rất xấu": "angry",
-        "Nguy hại": "danger"
-    }.get(status, "neutral")

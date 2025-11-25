@@ -1,10 +1,19 @@
 # backend/forecast.py
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
+import geopandas as gpd
+import os
+import sys
+
+# Thêm đường dẫn gốc dự án vào sys.path
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PROJECT_ROOT)
+
+import config
 
 # THAY TOKEN CỦA BẠN VÀO ĐÂY
-WAQI_TOKEN = "64e4752250846f70bbe89e0660f45c09d90b3cb7"  # ← THAY BẰNG TOKEN CỦA BẠN
+WAQI_TOKEN = "64e4752250846f70bbe89e0660f45c09d90b3cb7"
 
 # Mapping tên tỉnh WAQI → tên tiếng Việt chuẩn (63 tỉnh)
 CITY_MAPPING = {
@@ -16,20 +25,18 @@ CITY_MAPPING = {
     '@13672': 'Ninh Bình',
     '@5499': 'Quảng Ninh',
     '@13028': 'Quảng Bình',
-    '@13662' : 'Trà Vinh',
-    '@13687' : 'Cần Thơ',
-    '@13659' : 'Tây Ninh',
-    '@13417' : 'Gia Lai',
-    # '@476308' : 'Quảng Nam',
-    '@-476626' : 'Bình Định',
-    '@-476317' : 'Quảng Ngãi',
-    '@13658' : 'Đà Nẵng',
-    '@-476188' : 'Hà Nam',
-    'hung-yen' : 'Hưng Yên',
-    '@-476170' : 'Hải Dương',
-    # '@476293' :'Bắc Giang',
-    'viet-tri' : 'Phú Thọ',
-    '@-476272' : 'Long An',
+    '@13662': 'Trà Vinh',
+    '@13687': 'Cần Thơ',
+    '@13659': 'Tây Ninh',
+    '@13417': 'Gia Lai',
+    '@-476626': 'Bình Định',
+    '@-476317': 'Quảng Ngãi',
+    '@13658': 'Đà Nẵng',
+    '@-476188': 'Hà Nam',
+    'hung-yen': 'Hưng Yên',
+    '@-476170': 'Hải Dương',
+    'viet-tri': 'Phú Thọ',
+    '@-476272': 'Long An',
 }
 
 def get_city_key(province_vn):
@@ -39,30 +46,64 @@ def get_city_key(province_vn):
             return key
     return None
 
-# backend/forecast.py — CHỈ SỬA 2 HÀM NÀY THÔI!
-
-from datetime import datetime, timedelta, date
+def get_current_aqi(province_name):
+    """LẤY AQI HIỆN TẠI TỪ FILE GeoJSON"""
+    try:
+        gdf = gpd.read_file(config.DATA_PATH)
+        gdf['AQI'] = pd.to_numeric(gdf['AQI'], errors='coerce')
+        row = gdf[gdf['NAME_1'] == province_name]
+        if not row.empty and pd.notna(row.iloc[0]['AQI']):
+            return int(row.iloc[0]['AQI'])
+    except:
+        pass
+    return None
 
 def get_day_name_from_offset(offset: int) -> str:
     """Trả về tên ngày theo offset (0 = hôm nay, 1 = ngày mai, ...)"""
     names = ["Hôm nay", "Ngày mai", "Ngày kia", "Ngày kia nữa", "5 ngày nữa"]
     return names[offset] if 0 <= offset < 5 else f"{offset} ngày nữa"
 
+def is_forecast_valid(forecast_list, current_aqi):
+    """
+    Kiểm tra dự báo từ API có hợp lệ không:
+    - Nếu tất cả các ngày đều giống nhau → LỖI
+    - Nếu khác current_aqi quá nhiều → LỖI
+    """
+    if not forecast_list or len(forecast_list) < 2:
+        return False
+    
+    # Kiểm tra nếu TẤT CẢ các ngày đều có cùng 1 giá trị AQI
+    unique_values = set(item["aqi"] for item in forecast_list)
+    if len(unique_values) == 1:
+        # Tất cả đều giống nhau → có thể là lỗi API
+        single_value = list(unique_values)[0]
+        # Nếu giá trị này khác xa current_aqi → chắc chắn lỗi
+        if current_aqi and abs(single_value - current_aqi) > 50:
+            return False
+    
+    return True
+
 def get_forecast_real(province_name: str):
-    """Lấy dự báo AQI 5 ngày THẬT và ĐÚNG NGÀY từ hôm nay trở đi"""
+    """Lấy dự báo AQI 5 ngày - TỰ ĐỘNG PHÁT HIỆN DỮ LIỆU LỖI"""
     city_key = get_city_key(province_name)
-    if not city_key:
+    current_aqi = get_current_aqi(province_name)
+    
+    if not city_key or current_aqi is None:
         return get_forecast_fake(province_name)
     
     url = f"https://api.waqi.info/feed/{city_key}/?token={WAQI_TOKEN}"
     try:
         response = requests.get(url, timeout=10)
-        if response.status_code != 200 or response.json().get("status") != "ok":
+        if response.status_code != 200:
             return get_forecast_fake(province_name)
         
-        raw_forecast = response.json()["data"]["forecast"]["daily"]["pm25"]
+        data = response.json()
+        if data.get("status") != "ok":
+            return get_forecast_fake(province_name)
         
-        # Ép về định dạng datetime để dễ xử lý
+        raw_forecast = data["data"]["forecast"]["daily"]["pm25"]
+        
+        # Ép về định dạng datetime
         forecast_days = []
         for item in raw_forecast:
             try:
@@ -74,42 +115,48 @@ def get_forecast_real(province_name: str):
             except:
                 continue
         
-        # Lấy ngày hôm nay
         today = date.today()
         result = []
         
-        # Tìm và lấy đúng 5 ngày TIẾP THEO từ hôm nay (kể cả nếu WAQI có ngày hôm qua)
+        # Tạo dự báo 5 ngày
         for i in range(5):
             target_date = today + timedelta(days=i)
-            # Tìm ngày khớp nhất trong dữ liệu WAQI
-            match = None
-            for item in forecast_days:
-                if item["date"] == target_date:
-                    match = item
-                    break
-            # Nếu không có → dùng dự báo gần nhất hoặc fallback
-            if match is None:
-                # Tìm ngày gần nhất (trước/sau)
-                closest = min(forecast_days, key=lambda x: abs((x["date"] - target_date).days), default=None)
-                aqi = closest["aqi"] if closest else 50 + i*5
-            else:
-                aqi = match["aqi"]
             
-            formatted_date = target_date.strftime("%d/%m")
-            day_name = get_day_name_from_offset(i)
+            if i == 0:
+                # Ngày hôm nay = AQI hiện tại
+                aqi = current_aqi
+            else:
+                # Tìm trong dữ liệu API
+                match = None
+                for item in forecast_days:
+                    if item["date"] == target_date:
+                        match = item
+                        break
+                
+                if match:
+                    aqi = match["aqi"]
+                else:
+                    # Không có trong API → dùng giá trị gần nhất
+                    closest = min(forecast_days, key=lambda x: abs((x["date"] - target_date).days), default=None)
+                    aqi = closest["aqi"] if closest else current_aqi + (i * 5)
             
             result.append({
-                "date": formatted_date,
-                "day": day_name,
-                "aqi": aqi,
+                "date": target_date.strftime("%d/%m"),
+                "day": get_day_name_from_offset(i),
+                "aqi": int(aqi),
                 "status": get_status(aqi),
                 "color": get_color(aqi)
             })
         
+        # ✅ KIỂM TRA DỮ LIỆU API CÓ HỢP LỆ KHÔNG
+        if not is_forecast_valid(result[1:], current_aqi):  # Bỏ qua ngày hôm nay
+            print(f"⚠️ API WAQI trả về dữ liệu lỗi cho {province_name} → dùng dự báo mô phỏng")
+            return get_forecast_fake(province_name)
+        
         return result
         
     except Exception as e:
-        print(f"Lỗi API WAQI: {e}")
+        print(f"Lỗi API WAQI ({province_name}): {e}")
         return get_forecast_fake(province_name)
 
 def get_status(aqi):
@@ -130,16 +177,28 @@ def get_color(aqi):
     elif aqi <= 300: return "#99004c"
     else: return "#4d0000"
 
-# FALLBACK: Nếu WAQI không có → dùng giả lập đẹp
 def get_forecast_fake(province_name):
+    """Dự báo mô phỏng khi API lỗi - DỰA TRÊN AQI HIỆN TẠI"""
+    current_aqi = get_current_aqi(province_name)
+    if current_aqi is None:
+        current_aqi = 60  # Giá trị mặc định
+    
     import numpy as np
     np.random.seed(hash(province_name) % 2**32)
-    base = 40 + np.random.randint(-20, 30)
+    
     today = date.today()
     data = []
+    
     for i in range(5):
-        aqi = max(10, min(300, base + np.random.randint(-20, 25)))
+        if i == 0:
+            aqi = current_aqi  # Hôm nay = AQI hiện tại
+        else:
+            # Dao động ±20% so với current_aqi
+            variation = np.random.randint(-int(current_aqi*0.15), int(current_aqi*0.2))
+            aqi = max(10, min(300, current_aqi + variation))
+        
         target_date = today + timedelta(days=i)
+        
         data.append({
             "date": target_date.strftime("%d/%m"),
             "day": get_day_name_from_offset(i),
@@ -147,8 +206,9 @@ def get_forecast_fake(province_name):
             "status": get_status(aqi),
             "color": get_color(aqi)
         })
+    
     return data
 
-# HÀM CHÍNH BẠN SẼ GỌI
 def get_forecast(province_name: str):
+    """HÀM CHÍNH - Lấy dự báo 5 ngày"""
     return get_forecast_real(province_name)

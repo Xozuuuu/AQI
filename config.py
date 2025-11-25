@@ -3,7 +3,7 @@ from decouple import config
 API_KEY = config('API_KEY')
 PROVINCES_LIST = [
     'hanoi',
-    '@11593',
+    '@-541225',
     'thai-nguyen',
     'bac-ninh',
     '@14641',
@@ -27,7 +27,7 @@ PROVINCES_LIST = [
 ]  # Mở rộng sau (slug API)
 PROVINCE_MAPPING = {
     'hanoi': 'Hà Nội',
-    '@11593': 'Hồ Chí Minh',
+    '@-541225': 'Hồ Chí Minh',
     'thai-nguyen': 'Thái Nguyên',
     'bac-ninh': 'Bắc Ninh',
     '@14641': 'Thái Bình',

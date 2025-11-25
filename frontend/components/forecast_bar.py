@@ -18,10 +18,11 @@ def get_icon_base64(status):
         return base64.b64encode(file.read_bytes()).decode()
     return None
 
-def create_forecast_bar(province_name):
+def create_forecast_bar(province_name, current_aqi=None):
     if not province_name:
         return "<div></div>"
         
+    # get_forecast bây giờ tự động lấy AQI từ file GeoJSON, không cần truyền current_aqi nữa
     data = get_forecast(province_name)
     
     cards = []

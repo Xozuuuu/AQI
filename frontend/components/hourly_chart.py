@@ -31,7 +31,7 @@ def create_hourly_chart(province_name):
         name=""
     ))
 
-    # SỬA ĐIỂM ĐẦU TIÊN: to hơn + viền đen
+    # Điểm đầu tiên to hơn + viền đen
     with fig.batch_update():
         new_sizes = [20 if i == 0 else 16 for i in range(len(aqi_values))]
         new_line_widths = [5 if i == 0 else 3 for i in range(len(aqi_values))]
@@ -49,45 +49,58 @@ def create_hourly_chart(province_name):
             'font': dict(size=24, color="white")
         },
         plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(180,180,180,0.1)",
+        paper_bgcolor="#ccc",
         height=350,
-        margin=dict(l=0, r=0, t=80, b=80),
+        margin=dict(l=40, r=40, t=60, b=80),
         xaxis=dict(
             tickfont=dict(size=14, color="white"),
-            gridcolor="rgba(0,0,0,0)",
+            gridcolor="rgba(0,0,0,0)",  # ✅ BỎ LINE NGANG
             zeroline=False
         ),
         yaxis=dict(
             range=[0, max(max(aqi_values), 100) * 1.2],
-            showgrid=True,
+            showgrid=False,  # ✅ BỎ GRIDLINE
             gridcolor="rgba(0,0,0,0)",
+            showticklabels=False,  # ✅ BỎ SỐ BÊN TRÁI
             tickfont=dict(color="rgba(0,0,0,0)"),
             title=dict(
-                font=dict(color="rgba(0,0,0,0)",size=16)
+                text="",  # ✅ BỎ CHỮ "AQI"
+                font=dict(color="rgba(0,0,0,0)", size=16)
             )
         ),
         hoverlabel=dict(bgcolor="white", font_size=16, font_family="Arial"),
         showlegend=False
     )
 
-
-    # Icon + trạng thái dưới mỗi điểm
-    icon_map = {"Tốt": "Smiling Face", "Trung bình": "Neutral Face", "Kém": "Face with Mask", "Xấu": "Dizzy Face", "Rất xấu": "Face Vomiting", "Nguy hại": "Skull"}
+    # ✅ DÙNG EMOJI THAY VÌ TEXT
+    icon_map = {
+        "Tốt": "😊",
+        "Trung bình": "😐", 
+        "Kém": "😷",
+        "Xấu": "😵",
+        "Rất xấu": "🤮",
+        "Nguy hại": "💀"
+    }
+    
     for i, item in enumerate(data):
+        # Icon
         fig.add_annotation(
             x=times[i],
             y=-12,
-            text=icon_map.get(item["status"], "Neutral Face"),
+            text=icon_map.get(item["status"], "😐"),
             showarrow=False,
             font=dict(size=28),
-            yshift=10
+            yshift=0,
+            xref="x",
+            yref="y"
         )
+        # Label trạng thái
         fig.add_annotation(
             x=times[i],
             y=-25,
             text=item["status"],
             showarrow=False,
-            font=dict(size=12, color="white"),
+            font=dict(size=11, color="white"),
             bgcolor=item["color"],
             bordercolor="white",
             borderwidth=2,

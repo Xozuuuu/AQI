@@ -253,6 +253,9 @@ PROVINCE_IMAGES = {
     # Thêm dần khi có ảnh mới
 }
 
+# Biến để lưu AQI hiện tại (dùng chung cho snack bar và forecast)
+current_aqi_value = None
+
 if st.session_state.selected_province:
     selected_data = gdf[gdf['NAME_1'] == st.session_state.selected_province]
     
@@ -270,8 +273,10 @@ if st.session_state.selected_province:
             aqi_display = "N/A"
             status = "Chưa có dữ liệu"
             status_color = "#999999"
+            current_aqi_value = None
         else:
             aqi = int(aqi_raw)
+            current_aqi_value = aqi  # Lưu giá trị AQI để dùng cho forecast
             aqi_display = str(aqi)
             if aqi <= 50:
                 status, status_color = "Tốt", "#00e400"
@@ -338,7 +343,8 @@ else:
     """, unsafe_allow_html=True)
 
 if st.session_state.selected_province:
-    forecast_html = create_forecast_bar(st.session_state.selected_province)
+    # Truyền AQI hiện tại vào forecast bar để đồng bộ với snack bar
+    forecast_html = create_forecast_bar(st.session_state.selected_province, current_aqi=current_aqi_value)
     components.html(forecast_html, height=450, scrolling=False)
 else:
     # Giữ nguyên phần chưa chọn tỉnh của bạn
